@@ -1,0 +1,26 @@
+# Never commit model data, runtime state, or credentials.
+*.safetensors
+*.gguf
+*.bin
+*.npy
+*.npz
+*.pt
+*.pth
+*.log
+*.pid
+*.jsonl
+.cache/
+.service/
+.qwen-config/
+.qwen-config-backups/
+.venv/
+__pycache__/
+.DS_Store
+.env
+.env.*
+*.pem
+*.key
+token
+tokens
+models/
+downloads/
