@@ -28,7 +28,7 @@ class ConfigTests(unittest.TestCase):
         ])
 
     def test_syntax(self):
-        for path in REPO.glob("*.sh"):
+        for path in [*REPO.glob("*.sh"), REPO / "macqwen"]:
             result = self.run_command(["bash", "-n", str(path)])
             self.assertEqual(result.returncode, 0, result.stderr)
         for path in REPO.glob("*.py"):
@@ -59,7 +59,45 @@ class ConfigTests(unittest.TestCase):
             result = self.run_command([str(status)])
             self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
         self.assertEqual(self.run_command([str(self.bin / "qwen-stop")]).returncode, 0)
+        for cli in (self.bin / "macqwen", self.model / "macqwen"):
+            result = self.run_command([str(cli), "status"])
+            self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
+            self.assertIn("macqwen start", result.stdout)
+        self.assertEqual(self.run_command([str(self.bin / "macqwen"), "stop"]).returncode, 0)
         os.kill(os.getpid(), 0)
+
+    def test_macqwen_dispatch_and_exit_codes(self):
+        controller = self.root / "controller with spaces"
+        controller.mkdir()
+        cli = controller / "macqwen"
+        cli.write_bytes((REPO / "macqwen").read_bytes())
+        cli.chmod(0o755)
+        for command, code in (("start", 0), ("stop", 1), ("status", 3)):
+            script = controller / f"{command}.sh"
+            script.write_text(f"#!/bin/bash\nprintf 'called:{command}\\n'\nexit {code}\n")
+            script.chmod(0o755)
+            result = self.run_command([str(cli), command])
+            self.assertEqual(result.returncode, code)
+            self.assertEqual(result.stdout.strip(), f"called:{command}")
+        for arguments in ([], ["--help"], ["help"], ["start", "--help"]):
+            result = self.run_command([str(cli), *arguments])
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("Usage: macqwen", result.stdout)
+            self.assertNotIn("called:", result.stdout)
+        for arguments in (["unknown"], ["start", "extra"], ["stop", "--force"], ["help", "extra"]):
+            result = self.run_command([str(cli), *arguments])
+            self.assertEqual(result.returncode, 2)
+            self.assertNotIn("called:", result.stdout)
+
+    def test_installed_macqwen_remembers_model_path(self):
+        self.assertEqual(self.install().returncode, 0)
+        # Exercise the generated wrapper without inheriting a location override.
+        del self.env["QWEN_MODEL_DIR"]
+        script = self.model / ".qwen-config/status.sh"
+        script.write_text('#!/bin/bash\nprintf "%s\\n" "$QWEN_MODEL_DIR"\n')
+        result = self.run_command([str(self.bin / "macqwen"), "status"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(Path(result.stdout.strip()), self.model.resolve())
 
     def test_launcher_keeps_winning_settings_and_quoted_path(self):
         self.model.mkdir()

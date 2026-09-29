@@ -31,3 +31,19 @@ Fresh download of the 107 GB pack on a second Mac, lower-memory behavior, and
 MTPLX compatibility/performance have not been tested. The download dry run,
 installed-model checksum verification, and portable installer tests provide
 replication checks without duplicating the large model locally.
+
+## macqwen CLI update (September 28, 2026, evening)
+
+- Added and installed `macqwen start`, `macqwen stop`, and `macqwen status`,
+  preserving the old `qwen-*` aliases and model-directory scripts.
+- All **8** offline tests passed, including command dispatch, exit-code
+  propagation, help/invalid-argument handling, installed wrapper paths with
+  spaces/apostrophes, and compatibility aliases. Shell syntax, Python parsing,
+  and whitespace checks passed; independent read-only review found no blockers.
+- Verified real start, repeated start, stop, stopped status (exit 3), repeated
+  stop, restart, detached persistence, and health through the Mac's own
+  Tailscale address. Left the server running on `0.0.0.0:11234`.
+- The earlier process's local crash report confirms a self-abort (`SIGABRT`)
+  at 22:52 EDT from an invalid free in the runtime's streaming handler. No
+  inference settings were changed, and this update does **not** claim to fix
+  the underlying mlx-serve memory bug or add automatic crash recovery.

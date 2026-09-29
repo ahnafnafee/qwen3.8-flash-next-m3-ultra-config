@@ -10,7 +10,7 @@ MODEL_NAME = "ARC4NUM-Qwen3.8-Flash-Next-Uncensored-MLX-Serve-4bit"
 FILES = (
     "model.lock.sh", "model-service.sh", "serve_mlx_best.sh", "start.sh",
     "stop.sh", "status.sh", "background-launch.py", "download-model.sh",
-    "verify-model.sh",
+    "verify-model.sh", "macqwen",
 )
 
 
@@ -35,6 +35,9 @@ def main():
     bin_dir = args.bin_dir.expanduser().resolve()
     installed = model_dir / ".qwen-config"
     payloads = {installed / name: (source / name).read_bytes() for name in FILES}
+    payloads[model_dir / "macqwen"] = wrapper(model_dir, installed / "macqwen")
+    payloads[bin_dir / "macqwen"] = wrapper(model_dir, installed / "macqwen")
+    # Keep the earlier entry points working for existing scripts and shortcuts.
     for command in ("start", "stop", "status"):
         payloads[model_dir / f"{command}.sh"] = wrapper(model_dir, installed / f"{command}.sh")
         payloads[bin_dir / f"qwen-{command}"] = wrapper(model_dir, installed / f"{command}.sh")
@@ -58,7 +61,8 @@ def main():
         path.write_bytes(data)
         path.chmod(0o755)
     print(f"Installed scripts under {installed}")
-    print(f"Commands: {bin_dir}/qwen-start, qwen-stop, qwen-status")
+    print(f"Command: {bin_dir}/macqwen <start|stop|status>")
+    print("Compatibility aliases: qwen-start, qwen-stop, qwen-status")
     print(f"Ensure {bin_dir} is on PATH. Model weights were not changed; server was not restarted.")
 
 

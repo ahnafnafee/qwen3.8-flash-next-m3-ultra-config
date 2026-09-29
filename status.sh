@@ -3,7 +3,7 @@ set -euo pipefail
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)/model-service.sh"
 
 if ! model_pid="$(model_find_pid)"; then
-    printf 'Stopped. Start with qwen-start or ./start.sh.\n'
+    printf 'Stopped. Start with macqwen start.\n'
     exit 3
 fi
 status_code=0
