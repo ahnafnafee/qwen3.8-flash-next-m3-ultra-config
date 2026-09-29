@@ -81,16 +81,18 @@ and [runtime requirements](https://github.com/ddalcu/mlx-serve).
 
    ```sh
    python3 install.py
-   qwen-start
-   qwen-status
-   # qwen-stop
+   macqwen start
+   macqwen status
+   # macqwen stop
    ```
 
    If `~/.local/bin` is not on your persistent PATH, add
    `export PATH="$HOME/.local/bin:$PATH"` to your shell configuration.
    The installer copies scripts into the model's `.qwen-config/`, adds
-   `start.sh`, `stop.sh`, and `status.sh` in the model directory, and creates the
-   three `qwen-*` commands. The clone can subsequently move without breaking
+   `macqwen`, `start.sh`, `stop.sh`, and `status.sh` in the model directory, and
+   creates `macqwen` on PATH. The earlier `qwen-start`, `qwen-stop`, and
+   `qwen-status` commands remain as compatibility aliases. The clone can move
+   without breaking
    installed commands. No model weights are changed. Differing existing scripts
    are refused unless you pass `--force`, which backs up those scripts first.
    After pulling updates, rerun the installer with `--force`, then stop/start.
@@ -99,25 +101,38 @@ and [runtime requirements](https://github.com/ddalcu/mlx-serve).
 
 The default binding is **`0.0.0.0:11234`**, as requested. The local web UI is
 `http://127.0.0.1:11234`; the OpenAI-compatible base URL is
-`http://<MAC-TAILSCALE-IP>:11234/v1`. `qwen-status` discovers the current Tailscale
+`http://<MAC-TAILSCALE-IP>:11234/v1`. `macqwen status` discovers the current Tailscale
 IPv4 address when the CLI is installed. Install/sign into Tailscale separately;
 tailnet ACLs and the macOS firewall must permit connections from your other device.
 Check `/health` and `/v1/models` from that device to verify the full network path.
 
 **There is no API key configured. Binding `0.0.0.0` exposes the API on the LAN too,
 not just Tailscale.** Do not forward this port to the public Internet. For local
-use only, launch with `QWEN_HOST=127.0.0.1 qwen-start`. Tailnet traffic is protected
+use only, launch with `QWEN_HOST=127.0.0.1 macqwen start`. Tailnet traffic is protected
 by Tailscale; ordinary LAN HTTP is not. Use firewall restrictions or an authenticated
 proxy if you need access controls beyond your network.
 
 The server runs in a detached process session, survives terminal closure, and
 logs to `<model-dir>/.service/console.log`. No login item, launchd agent, automatic
 crash restart, or reboot autostart is installed. launchd was not used because
-macOS denied it access to the Documents-based log during testing. `qwen-stop`
+macOS denied it access to the Documents-based log during testing. `macqwen stop`
 checks process identity before sending SIGTERM and never force-kills it. `status`
 returns 0 when healthy, 2 when running but not ready, and 3 when stopped. Start
 waits up to 120 seconds for health and returns 2 if loading is still underway.
 Do not run simultaneous start/stop commands.
+
+Use `macqwen --help` for usage. A manual restart is
+`macqwen stop && macqwen start`. The CLI reports the underlying operation's exit
+code and rejects unknown commands or extra arguments without starting/stopping
+anything. Renaming the CLI does not provide crash recovery or change inference.
+
+On September 28 at 22:52 EDT, the original server (PID 73295, started 14:36)
+crashed with `SIGABRT`. The macOS report identifies an invalid free in
+`server.handleStreamingGeneration`, called by `server.handleChatCompletions`.
+This was a runtime abort, not a stop command or reboot. The exact request-level
+trigger is not established, and the underlying mlx-serve bug is not fixed by
+these management scripts. Crash reports are local under
+`~/Library/Logs/DiagnosticReports/mlx-serve-*.ips`; they are not included here.
 
 ## Paths and tuning
 

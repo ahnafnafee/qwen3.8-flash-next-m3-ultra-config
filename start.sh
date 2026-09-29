@@ -34,5 +34,5 @@ for ((attempt=0; attempt<120; attempt++)); do
     fi
     sleep 1
 done
-printf 'Still starting; run qwen-status or inspect %s.\n' "$MODEL_SERVICE_LOG" >&2
+printf 'Still starting; run macqwen status or inspect %s.\n' "$MODEL_SERVICE_LOG" >&2
 exit 2

@@ -1,0 +1,43 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+    printf '%s\n' \
+        'Usage: macqwen <start|stop|status>' \
+        '' \
+        '  start   Start the model in the background and wait for readiness.' \
+        '  stop    Stop this model safely.' \
+        '  status  Show process health, listener, and API address.' \
+        '' \
+        'Status exit codes: 0 healthy, 2 not ready, 3 stopped.' \
+        'No automatic restart after a crash or reboot is configured.'
+}
+
+if [[ $# -eq 0 ]]; then
+    usage
+    exit 0
+fi
+case "$1" in
+    help|-h|--help)
+        if [[ $# -ne 1 ]]; then usage >&2; exit 2; fi
+        usage
+        ;;
+    start|stop|status)
+        if [[ $# -eq 2 && ( "$2" == --help || "$2" == -h ) ]]; then
+            usage
+            exit 0
+        fi
+        if [[ $# -ne 1 ]]; then
+            printf 'Unexpected arguments for macqwen %s.\n' "$1" >&2
+            usage >&2
+            exit 2
+        fi
+        script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+        exec "$script_dir/$1.sh"
+        ;;
+    *)
+        printf 'Unknown command: %s\n' "$1" >&2
+        usage >&2
+        exit 2
+        ;;
+esac
